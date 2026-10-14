@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stairwell Launch Lab</title>
+<style>
+  :root{
+    --bg:#0f1830; --panel:#16213e; --panel2:#1d2b52; --ink:#eaf0ff;
+    --muted:#9fb0d6; --line:#2c3d6b; --accent:#ffd166; --good:#2fbf57; --bad:#e6294b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{background:radial-gradient(1200px 700px at 70% -10%, #1a2a52 0%, var(--bg) 55%);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
+  header{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#1a2748,#131f3c);flex-wrap:wrap}
+  header h1{font-size:19px;margin:0;letter-spacing:.3px}
+  header .tag{font-size:12px;color:var(--muted)}
+  header .spacer{flex:1}
+  .helpbtn{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;
+    padding:7px 12px;font-size:13px;cursor:pointer;touch-action:manipulation}
+  .helpbtn:hover{border-color:var(--accent)}
+  .medals{display:flex;gap:6px}
+  .medal{min-width:30px;height:26px;padding:0 6px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;border:2px solid var(--line);background:var(--panel2);color:var(--muted)}
+  .medal.won{border-color:var(--good);background:#153b28;color:#8ff0b6}
+  .wrap{max-width:1400px;margin:0 auto;padding:12px 14px 30px}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .tab{flex:1 1 200px;text-align:left;background:var(--panel);border:2px solid var(--line);border-radius:12px;
+    padding:7px 12px;cursor:pointer;color:var(--ink);font:inherit;touch-action:manipulation}
+  .tab:hover{border-color:#3a4d7d}
+  .tab.sel{border-color:var(--accent);background:#20315c}
+  .tab.locked{opacity:.5;cursor:not-allowed}
+  .tab .n{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .tab .nm{font-weight:700;font-size:15px;margin-top:2px}
+  .tab .eq{font-size:12px;color:var(--muted);margin-top:1px;font-style:italic}
+  .tab .badge{float:right;font-size:12px;font-weight:700}
+
+  main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:12px;align-items:start}
+  @media (max-width:980px){ main{grid-template-columns:1fr} }
+  .col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 8px}
+
+  .scenebar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+  .scbtn{background:var(--panel2);border:2px solid var(--line);color:var(--ink);border-radius:999px;padding:7px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation}
+  .scbtn.sel{border-color:var(--accent);color:var(--accent)}
+  .scenebar .st{font-size:12.5px;color:var(--muted);margin-left:auto}
+  .stagewrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#0a1024}
+  canvas#stage{display:block;width:100%;height:clamp(300px,56vh,540px);touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+  @media (max-width:640px){ canvas#stage{height:clamp(280px,96vw,460px)} }
+  .panel{position:absolute;top:10px;right:10px;width:min(360px,calc(100% - 20px));max-height:calc(100% - 20px);overflow:auto;
+    background:rgba(10,17,36,.96);border:1px solid var(--line);border-radius:14px;padding:13px 15px;display:none;box-shadow:0 10px 30px #0009}
+  .panel.show{display:block}
+  .banner{font-size:18px;font-weight:800;margin:0 0 6px}
+  .worked{margin-top:8px;font-size:13px;color:var(--muted);background:#0c1428;border:1px solid var(--line);border-radius:10px;padding:9px 11px;line-height:1.55}
+  .worked b{color:var(--ink)}
+  .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .toolbar .grp{display:flex;gap:6px;align-items:center;background:#0c1428;border:1px solid var(--line);border-radius:12px;padding:5px 7px}
+  .toolbar .grp .gl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:0 3px}
+
+  .btn{border:none;border-radius:11px;padding:10px 14px;font-size:14px;font-weight:800;cursor:pointer;
+    color:#0f1830;background:var(--accent);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .btn:hover{filter:brightness(1.05)}
+  .btn.secondary{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btn.secondary:hover{border-color:var(--accent)}
+  .btn.on,.btn.secondary.on{background:#ffe9a8;color:#0f1830;box-shadow:0 0 0 2px var(--accent) inset}
+  .btn.go{background:#ff8a3d}
+  .btn.sm{padding:8px 10px;font-size:13px}
+  .btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+
+  /* guide */
+  .donelist{margin:0 0 8px;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+  .donelist li{padding:2px 0}
+  .donelist b{color:#8ff0b6}
+  .stepbox{background:#0c1428;border:1px solid #3a4d7d;border-radius:12px;padding:11px 12px}
+  .stepbox .sn{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+  .stepbox h3{margin:2px 0 6px;font-size:16px}
+  .stepbox p{margin:6px 0;font-size:14px;line-height:1.5}
+  .stepbox .eqn{background:#16213e;border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:14px;margin:6px 0;line-height:1.5}
+  .inrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .inrow label{font-weight:700;font-size:14px}
+  .num{width:110px;font:inherit;font-size:16px;padding:8px 9px;border-radius:9px;border:1px solid var(--line);background:#16213e;color:var(--ink)}
+  .num:focus,.txt:focus{outline:2px solid var(--accent)}
+  .unit{font-size:13px;color:var(--muted)}
+  .msg{font-size:13px;margin-top:7px;line-height:1.45;min-height:1.2em}
+  .msg.bad{color:#ffb4a8} .msg.good{color:#8ff0b6}
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  @media (max-width:420px){ .mini{grid-template-columns:1fr} }
+  .mt{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px}
+  .mt .mh{background:#20315c;padding:4px 8px;font-weight:800;font-size:12px}
+  .mt .mr{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+  .mt .mr > div{padding:4px 8px}
+  .mt .mr > div + div{border-left:1px solid var(--line)}
+  .mt .k{color:var(--muted)}
+  .mt .t{grid-column:1 / -1}
+  .mt input{width:100%;font:inherit;font-size:14px;padding:4px 6px;border-radius:6px;border:1px solid var(--line);background:#0c1428;color:var(--ink)}
+  .chk{list-style:none;margin:0;padding:0;font-size:14px}
+  .chk li{padding:3px 0}
+  .chk label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+  .chk input{width:18px;height:18px;margin-top:1px;accent-color:#ffd166}
+  .chk .hd{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;font-weight:700;padding-top:8px}
+  details{font-size:13px;color:var(--muted);margin-top:8px}
+  details summary{cursor:pointer;color:var(--ink);font-weight:700}
+
+  /* notebook */
+  .readings{list-style:none;margin:0 0 8px;padding:0;font-size:14px}
+  .readings li{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed #2c3d6b}
+  .readings li b{font-variant-numeric:tabular-nums;color:#ffe3a1}
+  .empty{font-size:13px;color:var(--muted)}
+  .calc{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .txt{flex:1;min-width:150px;font:inherit;font-size:16px;padding:8px 9px;border-radius:9px;border:1px solid var(--line);background:#16213e;color:var(--ink)}
+  .calcout{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:#ffe3a1;min-width:90px}
+  textarea.txt{width:100%;min-height:74px;resize:vertical;line-height:1.4;margin-top:8px}
+  .hintline{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45}
+
+  .modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+  .modal.show{display:flex}
+  .modalbox{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:660px;width:100%;
+    padding:22px 24px;line-height:1.55;max-height:88vh;overflow:auto}
+  .modalbox h2{margin-top:0}
+  .modalbox ul{padding-left:20px}
+  .modalbox li{margin:5px 0}
+  .field{width:100%;font-size:1.1rem;padding:13px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);margin-top:6px}
+  .field:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+  .code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:2.1rem;font-weight:800;letter-spacing:.22em;
+    text-align:center;background:#0c1430;border:1px dashed var(--accent);border-radius:14px;padding:18px 10px 18px 20px;
+    color:var(--accent);margin:14px 0}
+  .congrats-emoji{font-size:2.6rem;text-align:center}
+  .turnin{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:.9rem;color:var(--muted)}
+  .row2{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .row2 .btn{flex:1}
+  .lvgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0}
+  @media(max-width:620px){ .lvgrid{grid-template-columns:1fr} }
+  .lvc{background:#0c1428;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45}
+  .lvc .t{font-weight:800;font-size:14px;margin-bottom:3px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Stairwell Launch Lab</h1>
+  <span class="tag">Find the launch speed · predict the landing · hit the bullseye</span>
+  <span class="spacer"></span>
+  <div class="medals" id="medals" title="Best target score on each level"></div>
+  <button class="helpbtn" id="helpBtn">📖&nbsp;How&nbsp;it&nbsp;works</button>
+  <button class="helpbtn" id="teacherBtn" title="Teacher: unlock all levels">🔑</button>
+</header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <main>
+    <div class="col">
+      <div class="card">
+        <div class="scenebar">
+          <button class="scbtn" id="scTable">🧪 Lab table</button>
+          <button class="scbtn" id="scStairs">🪜 Stairwell</button>
+          <span class="st" id="sceneNote"></span>
+        </div>
+        <div class="stagewrap">
+          <canvas id="stage"></canvas>
+          <div class="panel" id="panel"></div>
+        </div>
+        <div class="toolbar" id="toolbar"></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" id="guideCard"></div>
+      <div class="card" id="noteCard">
+        <h2>Lab notebook</h2>
+        <ul class="readings" id="readings"></ul>
+        <div class="empty" id="noReadings">Tape-measure readings will be listed here.</div>
+        <h2 style="margin-top:12px">Calculator</h2>
+        <div class="calc">
+          <input class="txt" id="calcIn" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. sqrt(2*0.86/9.8)">
+          <span class="calcout" id="calcOut">=</span>
+        </div>
+        <div class="hintline">Use + − × ÷ ( ) and sqrt( ). Example: <b>0.71 / 0.42</b></div>
+        <textarea class="txt" id="notes" placeholder="Notes: write your measurements and work here."></textarea>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- how it works -->
+<div class="modal" id="intro"><div class="modalbox">
+  <h2>🎯 Stairwell Launch Lab</h2>
+  <p>A ball bearing rolls down a ramp and launches <b>horizontally</b>. Your job: predict exactly where it lands and put the target there. You get <b>one official drop</b>, and your score depends on how close the mark is to the bullseye.</p>
+  <ul>
+    <li><b>🧪 Lab table:</b> launch the ball off a table. Measure the drop and where it lands, then work out the <b>launch speed</b>.</li>
+    <li><b>🪜 Stairwell:</b> slide the ramp along the landing railing until it lines up over a step. There's a <b>gap</b> and a <b>stair railing</b> between the landing and the step, so hang the ramp out over the step and use the plumb bob. Then measure the new drop, calculate where the ball will land, and place the target on that step.</li>
+    <li><b>📏 Tape measure:</b> turn it on, then drag from one dot to another (ramp end, plumb mark, step edge, landing marks, bullseye). Readings go in your notebook.</li>
+  </ul>
+  <div class="lvgrid">
+    <div class="lvc"><div class="t">Level 1 · Guided</div>Every step is prompted and your numbers are checked.</div>
+    <div class="lvc"><div class="t">Level 2 · Some help</div>A checklist and blank tables. Nothing is checked.</div>
+    <div class="lvc"><div class="t">Level 3 · On your own</div>Just the equipment. You plan it all.</div>
+  </div>
+  <p>Each level uses a <b>different ramp</b>, so the launch speed changes. Hit the target to unlock the next level. Finish all three for your completion code.</p>
+  <button class="btn" id="introGo" style="width:100%;margin-top:6px">Start the lab →</button>
+</div></div>
+
+<!-- teacher unlock -->
+<div class="modal" id="teacherModal"><div class="modalbox" style="max-width:420px">
+  <h2 style="margin-bottom:6px">🔑 Teacher unlock</h2>
+  <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">Opens every level on this device until the page is reloaded.</p>
+  <input class="field" id="teacherField" type="password" inputmode="numeric" autocomplete="off" placeholder="Passcode">
+  <div id="teacherErr" style="color:#ff8b9b;font-size:.85rem;min-height:1.1em;margin-top:6px"></div>
+  <div class="row2"><button class="btn secondary" id="teacherCancel">Cancel</button><button class="btn" id="teacherGo">Unlock</button></div>
+</div></div>
+
+<!-- confirm official drop -->
+<div class="modal" id="dropModal"><div class="modalbox" style="max-width:440px">
+  <h2 style="margin-bottom:6px">🔒 Lock the target and release?</h2>
+  <p style="margin:0">This is your <b>one official drop</b> for this level. Once you release, the target can't be moved.</p>
+  <div class="row2"><button class="btn secondary" id="dropCancel">Not yet</button><button class="btn go" id="dropGo">Release the ball!</button></div>
+</div></div>
+
+<!-- name entry -->
+<div class="modal" id="nameModal"><div class="modalbox" style="max-width:460px">
+  <div class="congrats-emoji">🎯</div>
+  <h2 style="text-align:center">All three levels complete!</h2>
+  <p style="text-align:center">Enter your name to get your completion code.</p>
+  <input class="field" id="nameField" type="text" autocomplete="name" placeholder="First and last name" maxlength="40">
+  <div id="nameErr" style="color:#ff8b9b;font-size:.85rem;min-height:1.1em;margin-top:6px"></div>
+  <button class="btn" id="codeBtn" style="width:100%;margin-top:8px">Get my code →</button>
+</div></div>
+
+<!-- code -->
+<div class="modal" id="winModal"><div class="modalbox" style="max-width:520px">
+  <div class="congrats-emoji">🎉🏆🎉</div>
+  <h2 style="text-align:center">Nice shooting, <span id="winName">friend</span>!</h2>
+  <p style="text-align:center">Your scores: <b id="winScores"></b>. Here is your completion code:</p>
+  <div class="code" id="codeOut">--------</div>
+  <button class="btn" id="turninBtn" style="width:100%;display:none">📨 Turn it in</button>
+  <div class="turnin" style="margin-top:12px" id="turninNote">Screenshot this page (or copy the code) and turn it in. Your initials are in the <b>3rd</b> and <b>6th</b> spots, and the number at the end is your total score.</div>
+  <div class="row2">
+    <button class="btn secondary" id="copyBtn">Copy code</button>
+    <button class="btn secondary" id="moreBtn">Keep practicing</button>
+  </div>
+</div></div>
+
+<script>
+"use strict";
+/* ---------- settings ---------- */
+const G=9.8;
+const CFG={ RAIL_H:1.00,   // railing height above the upper landing (m)
+            EXIT_OFF:0.06, // ramp exit above the top of the railing (m)
+            RISE:0.18, TREAD:0.28, NSTEPS:6,   // each step is RISE lower and TREAD deep
+            STAIR_W:1.90,  // width of the stairs = how far the ball can fly before the far wall (m)
+            TARGET_R:0.10, // target radius (m); rings every 2 cm score 100/80/60/40/20
+            ALIGN_OK:0.02, // "lined up" = within this distance of the step's center line (m)
+            EDGE:0.11,     // farther than this from the center line and the ball clips the step edge
+            GAP:0.15,      // gap between the landing railing and the edge of the steps (~6 in)
+            SRAIL_X:0.02,  // the stair railing stands right at the edge of the steps (its center, m past the edge)
+            HANDRAIL_H:0.90, // stair handrail height above the step (m)
+            RAMP_B:0.50,   // length of the ramp's base board (m)
+            HANG_MAX:0.40 }; // how far the ramp's end can hang out past the landing railing (m)
+const UNLOCK_SCORE=20;     // score needed (hit the target paper) to unlock the next level
+const TEACHER_CODE='1253';
+/* Google Form "Turn it in": paste the form's PRE-FILLED link here, made by typing these placeholders into the matching
+   questions: NAME, CODE, L1, L2, L3, TOTAL (any you leave out are skipped). Leave blank to hide the button. */
+const FORM_PREFILL_LINK='https://docs.google.com/forms/d/e/1FAIpQLSf5N85z3dqimjHQEMHcP6NLVZjO36nIIDd2emAhWVf9vn_8TA/viewform?usp=pp_url&entry.2072631698=NAME&entry.1611661514=CODE&entry.137969925=L1&entry.85060042=L2&entry.830605674=L3&entry.1423783400=TOTAL';
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const grid=(lo,hi,step)=>{ const n=Math.round((hi-lo)/step); return +(lo+step*Math.floor(Math.random()*(n+1))).toFixed(4); };
+function gauss(){ let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+const mean=a=>a.reduce((p,c)=>p+c,0)/a.length;
+const cm=v=>(v*100).toFixed(1)+' cm';
+const f3=v=>String(Math.round(v*1000)/1000);
+const near=(v,e,tol)=>Math.abs(v-e)<=tol, rel=(v,e,p)=>Math.abs(v-e)<=Math.abs(e)*p;
+const num=s=>{ s=String(s==null?'':s).trim().replace(/[−–]/g,'-').replace(/,/g,'').replace(/\s*(m\/s|cm|m|s)$/i,''); return s===''?NaN:Number(s); };
+
+/* ---------- levels & state ---------- */
+const LEVELS=[{name:'Guided',sub:'every step prompted and checked'},{name:'Some help',sub:'a checklist and blank tables'},{name:'On your own',sub:'just the equipment'}];
+const SAVE_KEY='stairwell-launch-lab-v1';
+function load(){ try{ const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); if(d&&Array.isArray(d.best)) return {best:[0,1,2].map(i=>d.best[i]==null?null:+d.best[i])}; }catch(e){} return {best:[null,null,null]}; }
+function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify(S.prog)); }catch(e){} }
+function newLv(i){
+  const v0=grid([1.5,1.7,1.4][i],[1.9,2.2,2.3][i],0.01), N=CFG.NSTEPS;
+  const start=CFG.TREAD*(Math.floor(Math.random()*N)+0.5)+(Math.random()<.5?-1:1)*grid(0.05,0.11,0.01);
+  return { v0, relH:clamp(v0*v0/(2*G*0.62),0.14,0.42), tableTop:grid(0.72,0.94,0.01), marks:[], rampPos:clamp(start,0.03,N*CFG.TREAD-0.03),
+    rampLocked:false, ex:-CFG.GAP, hangLocked:false, targetX:null, done:false, result:null, land:null, meas:[], step:0, vals:{}, tbl:{}, chk:{}, notes:'', msg:null };
+}
+const S={ level:0, scene:'table', prog:load(), teacher:false, lv:null, tape:false, tapeDrag:null, drag:null, ball:null, clock:0 };
+const passed=i=>S.prog.best[i]!=null&&S.prog.best[i]>=UNLOCK_SCORE;
+const unlocked=i=>S.teacher||i===0||passed(i-1);
+const y0t=lv=>lv.tableTop+0.03;                                  // launch height above the floor at the lab table
+const stepOf=lv=>clamp(Math.floor(lv.rampPos/CFG.TREAD),0,CFG.NSTEPS-1)+1;
+const stepOff=lv=>lv.rampPos-(stepOf(lv)-0.5)*CFG.TREAD;         // sideways distance from that step's center line
+const y0s=lv=>stepOf(lv)*CFG.RISE+CFG.RAIL_H+CFG.EXIT_OFF;      // launch height above the chosen step
+// where the plumb bob ends up: on the step (past the stair railing), resting on the stair railing, or down in the gap
+const plumbState=lv=>lv.ex>CFG.SRAIL_X+0.02?'step':Math.abs(lv.ex-CFG.SRAIL_X)<=0.02?'rail':'gap';
+
+function startLevel(i){ S.level=i; S.lv=newLv(i); S.scene='table'; S.tape=false; S.ball=null; hidePanel(); renderAll(); }
+
+/* ---------- anchors & tape measurements ---------- */
+const ANAME={exit:'ramp end',plumb:'plumb mark',target:'bullseye',land:'landing mark',marks:'landing marks',edge:'step edge'};
+function anchors(scene){
+  const lv=S.lv, a=[];
+  if(scene==='table'){ a.push({id:'exit',x:0,y:y0t(lv)},{id:'plumb',x:0,y:0}); if(lv.marks.length) a.push({id:'marks',x:mean(lv.marks.map(m=>m.x)),y:0}); }
+  else { a.push({id:'exit',x:lv.ex,y:y0s(lv)}); if(plumbState(lv)==='step') a.push({id:'plumb',x:lv.ex,y:0}); a.push({id:'edge',x:0,y:0}); if(lv.targetX!=null) a.push({id:'target',x:lv.targetX,y:0}); if(lv.land) a.push({id:'land',x:lv.land.x,y:0}); }
+  return a;
+}
+const aname=id=>ANAME[id]||id.replace('mark','mark ');
+function measList(){   // a tape laid to the cluster of landing marks gives one reading per mark
+  const out=[]; S.lv.meas=S.lv.meas.filter((m,k)=>{ const A=anchors(m.scene), a=A.find(p=>p.id===m.a), b=A.find(p=>p.id===m.b); if(!a||!b) return false;
+    const grp=a.id==='marks'||b.id==='marks', o=a.id==='marks'?b:a;
+    if(grp) S.lv.marks.forEach((mk,i)=>out.push({scene:m.scene,k,a:o.id,b:'mark'+(i+1),ax:o.x,ay:o.y,bx:mk.x,by:0,d:Math.hypot(o.x-mk.x,o.y),grp:true}));
+    else out.push({...m,k,ax:a.x,ay:a.y,bx:b.x,by:b.y,d:Math.hypot(a.x-b.x,a.y-b.y)});
+    return true; });
+  return out;
+}
+function renderReadings(){
+  const L=measList(), ul=$('#readings');
+  ul.innerHTML=L.map(m=>`<li><span>${m.scene==='table'?'🧪':'🪜'} ${aname(m.a)} → ${aname(m.b)}</span><b>${cm(m.d)}</b></li>`).join('');
+  $('#noReadings').style.display=L.length?'none':'block';
+}
+
+/* ---------- canvas & views ---------- */
+const cv=$('#stage'), g=cv.getContext('2d'); let W=0,H=0;
+function fit(){ const dpr=Math.min(2.5,window.devicePixelRatio||1); W=cv.clientWidth; H=cv.clientHeight;
+  const bw=Math.round(W*dpr), bh=Math.round(H*dpr); if(cv.width!==bw||cv.height!==bh){cv.width=bw;cv.height=bh;} g.setTransform(dpr,0,0,dpr,0,0); }
+function viewTable(){ const s=Math.min(W/3.05,(H-18)/1.6), ox=(W-3.05*s)/2+1.0*s, oy=H-10-0.13*s; return {s,X:x=>ox+x*s,Y:y=>oy-y*s}; }
+function viewStairs(){ const wide=W>=640, s=wide?Math.min((H-18)/2.86,(W*0.68)/3.15):Math.min((H-18)/2.86,W/3.15);
+  const ox=8+1.0*s, oy=H-10-0.16*s;
+  const inset=wide?{x:Math.max(ox+(CFG.STAIR_W+0.2)*s,W*0.70),y:8,w:0,h:H-16}:{x:W*0.50,y:6,w:W*0.50-6,h:H*0.44};
+  if(wide) inset.w=W-inset.x-8;
+  return {s,X:x=>ox+x*s,Y:y=>oy-y*s,inset}; }
+function viewInset(r){ const ww=CFG.NSTEPS*CFG.TREAD+0.6, hh=CFG.NSTEPS*CFG.RISE+CFG.RAIL_H+0.55, s=Math.min((r.w-10)/ww,(r.h-52)/hh);
+  const ox=r.x+(r.w-ww*s)/2+0.4*s, oy=r.y+46+(CFG.RAIL_H+0.3)*s; return {s,X:x=>ox+x*s,Y:y=>oy-y*s}; }
+function rr(x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function txt(s,x,y,{size=12,color='#eaf0ff',align='left',bold=false,bg=null}={}){
+  g.font=`${bold?'700 ':''}${size}px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`; g.textAlign=align; g.textBaseline='middle';
+  if(bg){ const tw=g.measureText(s).width, p=5; const bx=align==='center'?x-tw/2-p:align==='right'?x-tw-p:x-p; g.fillStyle=bg; rr(bx,y-size/2-4,tw+p*2,size+8,6); g.fill(); }
+  g.fillStyle=color; g.fillText(s,x,y); }
+function line(x1,y1,x2,y2){ g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); }
+function dot(x,y,r){ g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill(); }
+const bez=(p0,p1,p2,u)=>({x:(1-u)*(1-u)*p0.x+2*(1-u)*u*p1.x+u*u*p2.x, y:(1-u)*(1-u)*p0.y+2*(1-u)*u*p1.y+u*u*p2.y});
+function rampPts(y0,lv,ex=0){ return [{x:ex-0.42,y:y0+lv.relH},{x:ex-0.34,y:y0},{x:ex,y:y0}]; }
+
+function drawRamp(v,y0,lv,baseY,ex=0,clampX=null){
+  const [p0,p1,p2]=rampPts(y0,lv,ex), {X,Y,s}=v, bh=Math.max(3,0.02*s);
+  g.fillStyle='#6b7690'; g.fillRect(X(ex-CFG.RAMP_B),Y(baseY)-bh,CFG.RAMP_B*s,bh);   // base board
+  g.strokeStyle='#5d6b85'; g.lineWidth=Math.max(2,0.012*s);                       // stand
+  line(X(ex-0.40),Y(y0+lv.relH-0.02),X(ex-0.40),Y(baseY)-bh); line(X(ex-0.12),Y(y0-0.012),X(ex-0.12),Y(baseY)-bh);
+  if(clampX!=null){ const cx=X(clampX); g.strokeStyle='#e0762b'; g.lineWidth=Math.max(2,0.014*s);   // C-clamp holding the base to the railing
+    g.beginPath(); g.moveTo(cx-6,Y(baseY)-bh-4); g.lineTo(cx-6,Y(baseY)+12); g.lineTo(cx+6,Y(baseY)+12); g.moveTo(cx-6,Y(baseY)-bh-4); g.lineTo(cx+6,Y(baseY)-bh-4); g.stroke(); }
+  g.strokeStyle='#c7d2ea'; g.lineWidth=Math.max(3,0.022*s); g.lineCap='round';      // track
+  g.beginPath(); g.moveTo(X(p0.x),Y(p0.y-0.012)); g.quadraticCurveTo(X(p1.x),Y(p1.y-0.012),X(p2.x),Y(p2.y-0.012)); g.stroke(); g.lineCap='butt';
+  g.fillStyle='#ffd166'; g.fillRect(X(p0.x)-2,Y(p0.y+0.04),4,0.05*s);                // release mark
+  txt('release line',X(p0.x)-6,Y(p0.y+0.075),{size:10,color:'#ffd166',align:'right'});
+}
+function drawBall(v,x,y){ const r=Math.max(4,0.014*v.s); g.fillStyle='#dfe6f2'; dot(v.X(x),v.Y(y)-r,r); g.fillStyle='rgba(255,255,255,.7)'; dot(v.X(x)-r*0.3,v.Y(y)-r*1.3,r*0.3); }
+function drawPlumb(v,y0,ex=0,state='step'){ const {X,Y}=v, end=state==='step'?0.07:state==='rail'?CFG.HANDRAIL_H+0.08:-0.18;
+  g.strokeStyle='rgba(255,255,255,.55)'; g.lineWidth=1; g.setLineDash([3,3]); line(X(ex),Y(y0),X(ex),Y(end)); g.setLineDash([]);
+  g.fillStyle='#d9a441'; g.beginPath(); g.moveTo(X(ex)-4,Y(end)); g.lineTo(X(ex)+4,Y(end)); g.lineTo(X(ex),Y(end-0.06)); g.closePath(); g.fill();
+  if(state==='step'){ g.strokeStyle='#ffd166'; g.lineWidth=2; line(X(ex)-5,Y(0)+1,X(ex)+5,Y(0)+1); } }
+function drawTape(v,scene){
+  const {X,Y}=v;
+  const L=measList().filter(m=>m.scene===scene), seen=new Set(); let row=0;
+  L.forEach(m=>{ if(seen.has(m.k)) return; seen.add(m.k); const same=L.filter(q=>q.k===m.k);
+    const bx=m.grp?mean(same.map(q=>q.bx)):m.bx, x1=X(m.ax),y1=Y(m.ay),x2=X(bx),y2=Y(m.by);
+    const off=(Math.abs(m.ay-m.by)<1e-6)?14+(row++%3)*22:0;                         // lift floor measurements so they don't overlap
+    g.strokeStyle='#ffd166'; g.lineWidth=3; line(x1,y1-off,x2,y2-off); g.lineWidth=1; if(off){ line(x1,y1,x1,y1-off); line(x2,y2,x2,y2-off); }
+    const label=m.grp?(same.length>1?same.length+' readings (see notebook)':cm(m.d)):cm(m.d);
+    txt(label,(x1+x2)/2+(off?0:10),(y1+y2)/2-off-(off?9:0),{size:12,bold:true,color:'#0f1830',align:off?'center':'left',bg:'#ffd166'}); });
+  if(S.tape){ anchors(scene).forEach(a=>{ g.strokeStyle='#ffd166'; g.lineWidth=2; g.beginPath(); g.arc(X(a.x),Y(a.y),9,0,7); g.stroke(); g.fillStyle='rgba(255,209,102,.25)'; dot(X(a.x),Y(a.y),9); }); }
+  if(S.tapeDrag){ const a=anchors(scene).find(p=>p.id===S.tapeDrag.a); if(a){ g.strokeStyle='#ffd166'; g.lineWidth=3; g.setLineDash([6,4]); line(S.tapeDrag.sx!=null?S.tapeDrag.sx:X(a.x),S.tapeDrag.sy!=null?S.tapeDrag.sy:Y(a.y),S.tapeDrag.px,S.tapeDrag.py); g.setLineDash([]); } }
+}
+
+/* ---------- scene: lab table ---------- */
+function drawTable(){
+  const lv=S.lv, v=viewTable(), {X,Y,s}=v, y0=y0t(lv);
+  let gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,'#1c2740'); gr.addColorStop(1,'#263352'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+  g.fillStyle='#39414f'; g.fillRect(0,Y(0),W,H-Y(0)); g.fillStyle='#4a5466'; g.fillRect(0,Y(0),W,3);
+  // table
+  g.fillStyle='#7a5a3a'; g.fillRect(X(-1.3),Y(lv.tableTop),X(0)-X(-1.3),0.045*s); g.fillStyle='#5d4329';
+  g.fillRect(X(-1.22),Y(lv.tableTop-0.045),0.06*s,(lv.tableTop-0.045)*s); g.fillRect(X(-0.12),Y(lv.tableTop-0.045),0.06*s,(lv.tableTop-0.045)*s);
+  // carbon paper on the floor
+  g.fillStyle='#e9edf5'; g.fillRect(X(0.25),Y(0)-4,X(1.85)-X(0.25),4); g.fillStyle='#22262e'; g.fillRect(X(0.25),Y(0)-6,X(1.85)-X(0.25),2);
+  txt('carbon paper',X(1.85),Y(0)+12,{size:10,color:'#9fb0d6',align:'right'});
+  drawRamp(v,y0,lv,lv.tableTop); drawPlumb(v,y0);
+  lv.marks.forEach(m=>{ g.fillStyle='#ff5a6e'; dot(X(m.x),Y(0)-5,3); });
+  drawTape(v,'table');
+  if(lv.marks.length) drawLens(v,lv);
+  const b=S.ball; if(b&&b.scene==='table') drawBall(v,b.x,b.y); else { const p=rampPts(y0,lv)[0]; drawBall(v,p.x,p.y); }
+  txt('LAB TABLE: find the launch speed',12,16,{size:12,bold:true,color:'#ffd166',bg:'rgba(10,16,32,.7)'});
+}
+
+function drawLens(v,lv){   // magnified close-up of the carbon paper so the separate marks can be seen
+  const {X,Y}=v, mx=mean(lv.marks.map(m=>m.x)), half=0.05, lw=Math.min(250,W-24), lh=74, k=lw/(2*half);
+  const cx=clamp(X(mx),lw/2+8,W-lw/2-8), top=Math.max(40,Y(0)-205), LX=x=>cx+(x-mx)*k;
+  g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=1; line(X(mx),Y(0)-8,cx-lw/2+10,top+lh); line(X(mx),Y(0)-8,cx+lw/2-10,top+lh);
+  g.fillStyle='#0c1428'; rr(cx-lw/2,top,lw,lh,10); g.fill(); g.strokeStyle='#ffd166'; g.lineWidth=1.5; g.stroke();
+  txt('close-up of the carbon paper (10 cm wide)',cx,top+11,{size:10,color:'#c8d4f0',align:'center'});
+  g.save(); rr(cx-lw/2+2,top+20,lw-4,lh-22,7); g.clip();
+  g.fillStyle='#e9edf5'; g.fillRect(cx-lw/2,top+46,lw,26);
+  g.strokeStyle='rgba(15,24,48,.35)'; g.lineWidth=1; for(let c=Math.ceil((mx-half)*100);c<=(mx+half)*100;c++) line(LX(c/100),top+62,LX(c/100),top+72);
+  lv.marks.forEach((m,i)=>{ const px=LX(m.x); g.fillStyle='#22262e'; dot(px,top+56,4.5); const ly=top+27+(i%2)*11; txt(String(i+1),px,ly,{size:11,bold:true,color:'#ffb4a8',align:'center'}); g.strokeStyle='rgba(255,180,168,.6)'; line(px,ly+7,px,top+50); });
+  g.restore();
+}
+
+/* close-up of the step edge while the tape is on: the plumb mark and the step edge are only an inch or two apart */
+const LENS={x0:-0.22,x1:0.18,y0:-0.04,y1:0.16};
+function lensRect(){ if(!S.tape||S.scene!=='stairs'||!S.lv) return null; const v=viewStairs(), w=Math.min(250,W*0.46), h=w*(LENS.y1-LENS.y0)/(LENS.x1-LENS.x0)+22;
+  const x=W>=640?Math.min(v.X(0.42),v.inset.x-w-10):8, y=W>=640?44:v.inset.y+v.inset.h+10, k=w/(LENS.x1-LENS.x0);
+  return {x,y,w,h,X:wx=>x+(wx-LENS.x0)*k, Y:wy=>y+22+(LENS.y1-wy)*k, k}; }
+function drawEdgeLens(v,lv){
+  const L=lensRect(); if(!L) return; const {X,Y,k}=L, ps=plumbState(lv);
+  g.strokeStyle='rgba(255,255,255,.3)'; g.lineWidth=1; line(v.X(LENS.x1),v.Y(LENS.y1),L.x,L.y+L.h); line(v.X(LENS.x1),v.Y(LENS.y0),L.x+L.w,L.y+L.h);
+  g.fillStyle='#0c1428'; rr(L.x,L.y,L.w,L.h,10); g.fill(); g.strokeStyle='#ffd166'; g.lineWidth=1.5; g.stroke();
+  txt('close-up of the step edge',L.x+L.w/2,L.y+11,{size:10,color:'#c8d4f0',align:'center'});
+  g.save(); rr(L.x+2,L.y+20,L.w-4,L.h-22,7); g.clip();
+  g.fillStyle='#1d2740'; g.fillRect(L.x,L.y+20,L.w,L.h);
+  g.fillStyle='#4b566f'; g.fillRect(L.x,L.y+20,X(-CFG.GAP)-L.x,L.h);                                   // landing structure
+  g.fillStyle='#070b16'; g.fillRect(X(-CFG.GAP),L.y+20,X(0)-X(-CFG.GAP),L.h);                           // gap
+  g.fillStyle='#8b96b0'; g.fillRect(X(0),Y(0),L.x+L.w-X(0),5); g.fillStyle='#39435a'; g.fillRect(X(0),Y(0)+5,L.x+L.w-X(0),L.h);   // step
+  g.fillStyle='#8f9bb8'; g.fillRect(X(CFG.SRAIL_X)-0.012*k,L.y+20,0.024*k,Y(0)-L.y-20);                // stair railing post
+  txt('gap',(X(-CFG.GAP)+X(0))/2,Y(0.12),{size:10,color:'#8796b8',align:'center'});
+  if(ps!=='rail'){ g.strokeStyle='rgba(255,255,255,.6)'; g.lineWidth=1; g.setLineDash([3,3]); line(X(lv.ex),L.y+20,X(lv.ex),ps==='step'?Y(0.05):L.y+L.h); g.setLineDash([]);
+    if(ps==='step'){ g.fillStyle='#d9a441'; g.beginPath(); g.moveTo(X(lv.ex)-6,Y(0.06)); g.lineTo(X(lv.ex)+6,Y(0.06)); g.lineTo(X(lv.ex),Y(0.012)); g.closePath(); g.fill(); g.strokeStyle='#ffd166'; g.lineWidth=2; line(X(lv.ex)-7,Y(0)+1,X(lv.ex)+7,Y(0)+1); } }
+  anchors('stairs').filter(a=>a.x>=LENS.x0&&a.x<=LENS.x1&&a.y>=LENS.y0&&a.y<=LENS.y1).forEach(a=>{ g.strokeStyle='#ffd166'; g.lineWidth=2; g.beginPath(); g.arc(X(a.x),Y(a.y),9,0,7); g.stroke(); g.fillStyle='rgba(255,209,102,.25)'; dot(X(a.x),Y(a.y),9);
+    txt(aname(a.id),X(a.x)+(a.id==='edge'?-4:4),a.id==='edge'?Y(a.y)+16:Y(a.y)-18,{size:10,bold:true,color:'#ffe3a1',align:a.id==='edge'?'right':'left',bg:'rgba(10,16,32,.85)'}); });
+  g.restore();
+}
+
+/* ---------- scene: stairwell ---------- */
+function drawStairs(){
+  const lv=S.lv, v=viewStairs(), {X,Y,s}=v, n=stepOf(lv), y0=y0s(lv), dN=n*CFG.RISE, Wd=CFG.STAIR_W;
+  let gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,'#18223a'); gr.addColorStop(1,'#222f4c'); g.fillStyle=gr; g.fillRect(0,0,W,H);
+  // steps above the chosen one, seen behind it (each one RISE higher), up to the landing
+  for(let k=n-1;k>=1;k--){ const top=(n-k)*CFG.RISE; g.fillStyle=`rgb(${58+k*7},${66+k*7},${86+k*7})`; g.fillRect(X(0),Y(top),X(Wd)-X(0),CFG.RISE*s+1); g.fillStyle='rgba(0,0,0,.25)'; g.fillRect(X(0),Y(top),X(Wd)-X(0),2); }
+  g.fillStyle='#2c3650'; g.fillRect(X(Wd),0,W-X(Wd),H);                                 // far wall
+  const LR=-CFG.GAP;                                                                    // landing edge = outer face of the landing railing
+  g.fillStyle='#4b566f'; g.fillRect(0,Y(dN),X(LR),H-Y(dN)); g.fillStyle='#667391'; g.fillRect(0,Y(dN),X(LR),4);   // upper landing
+  g.fillStyle='#070b16'; g.fillRect(X(LR),Y(dN)+4,X(0)-X(LR),H-Y(dN));                                            // the gap
+  txt('gap',(X(LR)+X(0))/2,Y(0)+16,{size:10,color:'#8796b8',align:'center'});
+  g.fillStyle='#8b96b0'; g.fillRect(X(0),Y(0),X(Wd)-X(0),6); g.fillStyle='#39435a'; g.fillRect(X(0),Y(0)+6,X(Wd)-X(0),H-Y(0));   // chosen tread
+  txt(`step ${n}`,X(Wd)-8,Y(0)+18,{size:11,color:'#c8d4f0',align:'right',bold:true});
+  // stair railing at the edge of the step (runs up along the stairs, seen end-on)
+  g.strokeStyle='#8f9bb8'; g.lineWidth=Math.max(2,0.022*s); line(X(CFG.SRAIL_X),Y(0),X(CFG.SRAIL_X),Y(CFG.HANDRAIL_H));
+  g.fillStyle='#b9c4dc'; dot(X(CFG.SRAIL_X),Y(CFG.HANDRAIL_H),Math.max(4,0.03*s));
+  txt('stair railing',X(CFG.SRAIL_X)+8,Y(CFG.HANDRAIL_H*0.55),{size:10,color:'#8796b8'});
+  g.fillStyle='#c8d4f0'; g.fillRect(X(0)-1,Y(0)-2,3,9);                                                         // step edge
+  // landing railing (seen end-on) with the ramp clamped on top, hanging out over the step
+  g.strokeStyle='#aab6d0'; g.lineWidth=Math.max(3,0.03*s); line(X(LR-0.03),Y(dN),X(LR-0.03),Y(dN+CFG.RAIL_H)); g.fillStyle='#c7d2ea'; rr(X(LR-0.07),Y(dN+CFG.RAIL_H)-3,0.07*s,7,3); g.fill();
+  drawRamp(v,y0,lv,dN+CFG.RAIL_H+0.008,lv.ex,LR-0.035); drawPlumb(v,y0,lv.ex,plumbState(lv));
+  // target
+  if(lv.targetX!=null){ const tx=X(lv.targetX), tw=CFG.TARGET_R*s; g.fillStyle='#f4f6fb'; g.fillRect(tx-tw,Y(0)-4,tw*2,4);
+    ['#e6294b','#f4f6fb','#e6294b'].forEach((c,i)=>{ g.fillStyle=c; const ww=tw*(0.6-i*0.2); g.fillRect(tx-ww,Y(0)-4,ww*2,4); });
+    g.strokeStyle='#ffd166'; g.lineWidth=2; line(tx,Y(0)-4,tx,Y(0)-16); g.fillStyle='#ffd166'; g.beginPath(); g.moveTo(tx-5,Y(0)-16); g.lineTo(tx+5,Y(0)-16); g.lineTo(tx,Y(0)-9); g.closePath(); g.fill();
+    if(!lv.done) txt('target',tx,Y(0)-26,{size:10,color:'#ffd166',align:'center',bold:true}); }
+  if(lv.land){ g.fillStyle='#111'; dot(X(lv.land.x),Y(0)-5,3.5); g.strokeStyle='#ff5a6e'; g.lineWidth=1.5; g.beginPath(); g.arc(X(lv.land.x),Y(0)-5,7,0,7); g.stroke(); }
+  drawTape(v,'stairs');
+  const b=S.ball; if(b&&b.scene==='stairs') drawBall(v,b.x,b.y); else if(!lv.done){ const p=rampPts(y0,lv,lv.ex)[0]; drawBall(v,p.x,p.y); }
+  txt('STAIRWELL: looking along the stairs',12,16,{size:12,bold:true,color:'#ffd166',bg:'rgba(10,16,32,.7)'});
+  drawInset(v.inset);
+  drawEdgeLens(v,lv);
+}
+function drawInset(r){
+  const lv=S.lv, v=viewInset(r), {X,Y,s}=v, N=CFG.NSTEPS, n=stepOf(lv), off=stepOff(lv), ok=Math.abs(off)<=CFG.ALIGN_OK;
+  g.fillStyle='rgba(8,13,28,.92)'; rr(r.x,r.y,r.w,r.h,10); g.fill(); g.strokeStyle='#3a4d7d'; g.lineWidth=1; g.stroke();
+  txt('Side view · slide along the railing',r.x+8,r.y+13,{size:11,bold:true,color:'#c8d4f0'});
+  const st = ok?`✓ lined up over step ${n}` : `step ${n}: ${(Math.abs(off)*100).toFixed(0)} cm ${off<0?'left':'right'} of center`;
+  txt(st,r.x+8,r.y+31,{size:11,bold:true,color:ok?'#8ff0b6':'#ffd166'});
+  g.save(); rr(r.x+1,r.y+40,r.w-2,r.h-41,8); g.clip();
+  // landing slab behind, stairs in front
+  g.fillStyle='#4b566f'; g.fillRect(X(-0.6),Y(0),X(N*CFG.TREAD+0.3)-X(-0.6),0.1*s);
+  for(let j=1;j<=N;j++){ const x0=X((j-1)*CFG.TREAD), x1=X(j*CFG.TREAD), yt=Y(-j*CFG.RISE);
+    g.fillStyle=j===n?'#8b96b0':'#5a6682'; g.fillRect(x0,yt,x1-x0+1,Y(-N*CFG.RISE-0.3)-yt); g.fillStyle='rgba(0,0,0,.3)'; g.fillRect(x0,yt,1.5,Y(-N*CFG.RISE-0.3)-yt);
+    g.strokeStyle='rgba(255,255,255,.35)'; g.lineWidth=1; g.setLineDash([2,3]); line((x0+x1)/2,yt,(x0+x1)/2,yt+8); g.setLineDash([]);
+    txt(String(j),(x0+x1)/2,yt+17,{size:10,color:j===n?'#0f1830':'#c8d4f0',align:'center',bold:true}); }
+  // railing
+  g.strokeStyle='#aab6d0'; g.lineWidth=2; for(let x=-0.3;x<=N*CFG.TREAD+0.2;x+=0.42) line(X(x),Y(0),X(x),Y(CFG.RAIL_H));
+  g.lineWidth=4; line(X(-0.6),Y(CFG.RAIL_H),X(N*CFG.TREAD+0.3),Y(CFG.RAIL_H));
+  // ramp (seen end-on, aimed at you) and its plumb line down to the step
+  const rx=X(lv.rampPos); g.strokeStyle=ok?'#2fbf57':'#ffd166'; g.lineWidth=1.5; g.setLineDash([4,3]); line(rx,Y(CFG.RAIL_H),rx,Y(-n*CFG.RISE)); g.setLineDash([]);
+  g.fillStyle='#c7d2ea'; rr(rx-9,Y(CFG.RAIL_H+CFG.EXIT_OFF)-14,18,16,3); g.fill(); g.fillStyle='#0f1830'; dot(rx,Y(CFG.RAIL_H+CFG.EXIT_OFF)-6,4); g.fillStyle='#dfe6f2'; dot(rx,Y(CFG.RAIL_H+CFG.EXIT_OFF)-6,2);
+  if(!lv.rampLocked&&!lv.done){ g.fillStyle='#ffd166'; g.beginPath(); g.moveTo(rx-22,Y(CFG.RAIL_H+CFG.EXIT_OFF)-6); g.lineTo(rx-14,Y(CFG.RAIL_H+CFG.EXIT_OFF)-11); g.lineTo(rx-14,Y(CFG.RAIL_H+CFG.EXIT_OFF)-1); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(rx+22,Y(CFG.RAIL_H+CFG.EXIT_OFF)-6); g.lineTo(rx+14,Y(CFG.RAIL_H+CFG.EXIT_OFF)-11); g.lineTo(rx+14,Y(CFG.RAIL_H+CFG.EXIT_OFF)-1); g.closePath(); g.fill(); }
+  const b=S.ball; if(b&&b.scene==='stairs'&&b.phase==='fly'){ g.fillStyle='#dfe6f2'; dot(rx,Y(CFG.RAIL_H+CFG.EXIT_OFF-(y0s(lv)-b.y)),3.5); }
+  g.restore();
+}
+
+/* ---------- ball ---------- */
+function release(scene){
+  if(S.ball) return; const lv=S.lv, y0=scene==='table'?y0t(lv):y0s(lv);
+  const v=lv.v0*(1+0.006*gauss()), z=0.004*gauss();
+  const ex=scene==='stairs'?lv.ex:0;
+  S.ball={scene,phase:'roll',t:0,v,z,y0,ex,x:ex-0.42,y:y0+lv.relH};
+}
+function updateBall(dt){
+  const b=S.ball; if(!b) return; const lv=S.lv; b.t+=dt*0.8;
+  if(b.phase==='roll'){ const u=Math.min(1,b.t/0.6), e=u*u, p=bez(...rampPts(b.y0,lv,b.ex),e); b.x=p.x; b.y=p.y; if(u>=1){ b.phase='fly'; b.t=0; } }
+  else if(b.phase==='fly'){ b.x=b.ex+b.v*b.t; b.y=b.y0-0.5*G*b.t*b.t;
+    const wall=b.scene==='stairs'&&b.x>=CFG.STAIR_W;
+    if(b.y<=0||wall){ const xl=wall?CFG.STAIR_W:b.ex+b.v*Math.sqrt(2*b.y0/G); b.x=xl; b.y=Math.max(0,b.y); b.phase='rest'; b.t=0;
+      if(b.scene==='table'){ if(xl>=0.25&&xl<=1.85) lv.marks.push({x:xl,z:b.z}); renderReadings(); renderGuide(); renderToolbar(); }
+      else finishDrop(xl,b.z,wall); } }
+  else { if(b.t>0.35) S.ball=null; }
+}
+
+/* ---------- the official drop ---------- */
+function finishDrop(x,z,wall){
+  const lv=S.lv, off=stepOff(lv), clipped=Math.abs(off)>CFG.EDGE;
+  const dx=x-lv.targetX, dz=z+off, d=Math.hypot(dx,dz);
+  let score=0; if(!wall&&!clipped){ const ring=Math.ceil(d/0.02-1e-9); score = ring<=5 ? [100,100,80,60,40,20][Math.max(ring,1)] : 0; if(d<=0.02) score=100; }
+  lv.land={x,z:dz}; lv.done=true; lv.result={score,d,dx,dz,wall,clipped,x};
+  if(S.prog.best[S.level]==null||score>S.prog.best[S.level]){ S.prog.best[S.level]=score; save(); }
+  renderAll(); setTimeout(showResult,650);
+}
+function showResult(){
+  const lv=S.lv, r=lv.result, i=S.level, hit=r.score>=UNLOCK_SCORE;
+  const head = r.clipped?'<span style="color:#ff8b9b">The ball clipped the edge of a step.</span>' : r.wall?'<span style="color:#ff8b9b">The ball hit the far wall.</span>'
+    : r.score===100?'<span style="color:#8ff0b6">🎯 Bullseye!</span>' : hit?`<span style="color:#8ff0b6">On the target: ${r.score} points</span>` : '<span style="color:#ff8b9b">Missed the target.</span>';
+  const where = r.clipped?'The ramp wasn’t lined up over the middle of the step, so the ball never reached the tread cleanly.'
+    : `The mark is <b>${(r.d*100).toFixed(1)} cm</b> from the bullseye: ${(Math.abs(r.dx)*100).toFixed(1)} cm too ${r.dx>0?'far':'short'}`+(Math.abs(r.dz)>0.012?` and ${(Math.abs(r.dz)*100).toFixed(1)} cm to the side (the ramp was off the step’s center line).`:'.');
+  const ex=lv.ex; let tip='';
+  if(!r.clipped&&!r.wall&&Math.abs(r.dx)>0.02){
+    if(Math.abs(ex)>=0.02&&Math.abs(r.dx-ex)<=0.015) tip = ex<0
+      ? `<b>Where did the ball's flight start?</b> The end of your ramp was ${cm(-ex)} <i>before</i> the edge of the step, out over the gap, and that's where the ball started falling. Measuring Δx from the edge of the step put your target ${cm(-r.dx)} too far out. Hang the ramp out over the step and measure from the plumb mark.`
+      : `<b>Your target wasn't far enough out: the ball landed ${cm(r.dx)} past it. That's about the distance from the edge of the step to your plumb mark (${cm(ex)}).</b> Δx is measured from the plumb mark, right under the end of the ramp, not from the edge of the step.`;
+    else if(ex<0) tip=`The end of your ramp was over the gap, ${cm(-ex)} before the edge of the step. The ball starts falling from there.`;
+  }
+  const next = i<2 ? (passed(i)?`<button class="btn" id="rNext" style="flex:1">Level ${i+2}: ${LEVELS[i+1].name} →</button>`:'') : (allDone()?`<button class="btn" id="rCode" style="flex:1">🏆 Get my completion code</button>`:'');
+  const p=$('#panel'); p.className='panel show';
+  p.innerHTML=`<div class="banner">${head}</div>
+    <canvas id="tgt" width="230" height="230" style="display:block;margin:6px auto;width:230px;height:230px"></canvas>
+    <div class="worked">${where}${tip?'<br><br>'+tip:''}<br>Best on this level: <b>${S.prog.best[i]}</b> points.${!passed(i)?'<br>Hit the target paper to unlock the next level. Each retry uses a <b>new ramp</b>, so you start from the lab table again.':''}</div>
+    <div class="rowbtns">${next}<button class="btn secondary" id="rAgain">↻ Try this level again</button></div>`;
+  drawTarget($('#tgt'),r);
+  if($('#rNext')) $('#rNext').onclick=()=>startLevel(i+1);
+  if($('#rCode')) $('#rCode').onclick=()=>{ hidePanel(); showWin(); };
+  $('#rAgain').onclick=()=>startLevel(i);
+}
+function drawTarget(c,r){
+  const x=c.getContext('2d'), R=100, cx=115, cy=115, sc=R/CFG.TARGET_R; x.clearRect(0,0,230,230);
+  ['#f4f6fb','#111827','#3b82f6','#e6294b','#ffd166'].forEach((col,i)=>{ x.fillStyle=col; x.beginPath(); x.arc(cx,cy,R*(1-i*0.2),0,7); x.fill(); x.strokeStyle='rgba(0,0,0,.35)'; x.lineWidth=1; x.stroke(); });
+  x.fillStyle='#0f1830'; x.font='700 11px sans-serif'; x.textAlign='center'; ['100','80','60','40','20'].forEach((s,i)=>{ x.fillStyle=i===3?'#fff':(i===0?'#0f1830':i===4?'#0f1830':'#fff'); x.fillText(s,cx,cy-R*(i*0.2+0.1)+4); });
+  x.strokeStyle='rgba(15,24,48,.6)'; x.lineWidth=1; x.beginPath(); x.moveTo(cx-6,cy); x.lineTo(cx+6,cy); x.moveTo(cx,cy-6); x.lineTo(cx,cy+6); x.stroke();
+  if(r.clipped) return;
+  let mx=r.dx*sc, my=-r.dz*sc; const m=Math.hypot(mx,my), lim=110; const out=m>lim; if(out){ mx*=lim/m; my*=lim/m; }
+  x.fillStyle='#000'; x.beginPath(); x.arc(cx+mx,cy+my,5,0,7); x.fill(); x.strokeStyle='#39ff88'; x.lineWidth=2.5; x.beginPath(); x.arc(cx+mx,cy+my,9,0,7); x.stroke();
+  x.fillStyle='#9fb0d6'; x.font='11px sans-serif'; x.textAlign='left'; x.fillText('ramp ⟶ far wall',6,224); if(out){ x.textAlign='right'; x.fillText('(off the paper)',224,224); }
+}
+function hidePanel(){ $('#panel').className='panel'; }
+const allDone=()=>[0,1,2].every(passed);
+
+/* ---------- frame loop & pointer input ---------- */
+let last=performance.now();
+function frame(now){ const dt=Math.min(0.05,(now-last)/1000); last=now; S.clock+=dt; fit(); updateBall(dt); if(S.lv){ if(S.scene==='table') drawTable(); else drawStairs(); } requestAnimationFrame(frame); }
+function ptr(e){ const r=cv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+function nearestAnchor(p,exclude){ const v=S.scene==='table'?viewTable():viewStairs(), L=lensRect(); let best=null,bd=30;
+  anchors(S.scene).forEach(a=>{ if(a.id===exclude) return; const pts=[[v.X(a.x),v.Y(a.y)]];
+    if(L&&a.x>=LENS.x0&&a.x<=LENS.x1&&a.y>=LENS.y0&&a.y<=LENS.y1) pts.push([L.X(a.x),L.Y(a.y)]);
+    pts.forEach(([sx,sy])=>{ const d=Math.hypot(sx-p.x,sy-p.y); if(d<bd){bd=d;best={...a,sx,sy};} }); }); return best; }
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault(); try{cv.setPointerCapture(e.pointerId);}catch(_){}
+  const p=ptr(e), lv=S.lv; if(S.ball) return;
+  if(S.tape){ const a=nearestAnchor(p); if(a){ S.tapeDrag={a:a.id,sx:a.sx,sy:a.sy,px:p.x,py:p.y}; } return; }
+  if(S.scene!=='stairs'||lv.done) return;
+  const v=viewStairs(), r=v.inset;
+  if(p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h){ if(!lv.rampLocked){ S.drag={kind:'ramp'}; moveRamp(p); } return; }
+  if(lv.targetX!=null && Math.abs(v.X(lv.targetX)-p.x)<Math.max(26,CFG.TARGET_R*v.s) && Math.abs(v.Y(0)-p.y)<40){ S.drag={kind:'target',dx:v.X(lv.targetX)-p.x}; return; }
+  const base=stepOf(lv)*CFG.RISE+CFG.RAIL_H, y0=y0s(lv);                         // grab the ramp to hang it out farther (or pull it back)
+  if(!lv.hangLocked && p.x>=v.X(lv.ex-CFG.RAMP_B)-6 && p.x<=v.X(lv.ex)+14 && p.y>=v.Y(y0+lv.relH)-14 && p.y<=v.Y(base)+16){ S.drag={kind:'hang',dx:v.X(lv.ex)-p.x}; }
+});
+function moveRamp(p){ const lv=S.lv, v=viewInset(viewStairs().inset), x=(p.x-v.X(0))/v.s; setRamp(Math.round(x*100)/100); }
+function setRamp(x){ const lv=S.lv; if(lv.rampLocked||lv.done) return; const was=stepOf(lv); lv.rampPos=clamp(x,0.03,CFG.NSTEPS*CFG.TREAD-0.03); renderReadings(); renderGuide(); renderSceneNote(); }
+function setHang(x){ const lv=S.lv; if(lv.hangLocked||lv.done) return; lv.ex=clamp(Math.round(x*1000)/1000,-CFG.GAP,-CFG.GAP+CFG.HANG_MAX); renderReadings(); renderGuide(); }
+function setTarget(x){ const lv=S.lv; if(lv.done) return; lv.targetX=clamp(Math.round(x*1000)/1000,CFG.TARGET_R+0.02,CFG.STAIR_W-CFG.TARGET_R-0.02); renderReadings(); renderGuide(); }
+cv.addEventListener('pointermove',e=>{ const p=ptr(e);
+  if(S.tapeDrag){ S.tapeDrag.px=p.x; S.tapeDrag.py=p.y; const a=nearestAnchor(p,S.tapeDrag.a); if(a){ S.tapeDrag.px=a.sx; S.tapeDrag.py=a.sy; } return; }
+  if(!S.drag) return;
+  if(S.drag.kind==='ramp') moveRamp(p);
+  else if(S.drag.kind==='hang'){ const v=viewStairs(); setHang((p.x+S.drag.dx-v.X(0))/v.s); }
+  else { const v=viewStairs(); setTarget((p.x+S.drag.dx-v.X(0))/v.s); } });
+function endPtr(e){ const p=ptr(e);
+  if(S.tapeDrag){ const b=nearestAnchor(p,S.tapeDrag.a), a=S.tapeDrag.a; S.tapeDrag=null;
+    if(b){ const lv=S.lv; if(!lv.meas.some(m=>m.scene===S.scene&&((m.a===a&&m.b===b.id)||(m.a===b.id&&m.b===a)))) lv.meas.push({scene:S.scene,a,b:b.id}); renderReadings(); } }
+  S.drag=null; }
+cv.addEventListener('pointerup',endPtr); cv.addEventListener('pointercancel',()=>{ S.tapeDrag=null; S.drag=null; });
+
+/* ---------- toolbar ---------- */
+function renderToolbar(){
+  const lv=S.lv, tb=$('#toolbar'), busy=!!S.ball;
+  const tapeBtns=`<button class="btn secondary${S.tape?' on':''}" id="tTape">📏 Tape measure${S.tape?': ON':''}</button><button class="btn secondary sm" id="tClear" ${measList().some(m=>m.scene===S.scene)?'':'disabled'}>✕ Clear tape</button>`;
+  if(S.scene==='table'){
+    tb.innerHTML=`<button class="btn go" id="tRelease">▶ Release the ball</button>${tapeBtns}<button class="btn secondary sm" id="tPaper" ${lv.marks.length?'':'disabled'}>🧻 Fresh carbon paper</button>`;
+    $('#tRelease').onclick=()=>{ release('table'); };
+    $('#tPaper').onclick=()=>{ lv.marks=[]; renderReadings(); renderGuide(); renderToolbar(); };
+  } else {
+    const placed=lv.targetX!=null, dis=lv.done?'disabled':'';
+    tb.innerHTML=`<div class="grp"><span class="gl">Along railing</span><button class="btn secondary sm" id="rL" ${lv.rampLocked||lv.done?'disabled':''}>◀ 1 cm</button><button class="btn secondary sm" id="rR" ${lv.rampLocked||lv.done?'disabled':''}>1 cm ▶</button></div>
+      <div class="grp"><span class="gl">Hang out</span><button class="btn secondary sm" id="hL" ${lv.hangLocked||lv.done?'disabled':''}>◀ 1 cm</button><button class="btn secondary sm" id="hR" ${lv.hangLocked||lv.done?'disabled':''}>1 cm ▶</button></div>
+      ${placed?`<div class="grp"><span class="gl">Target</span><button class="btn secondary sm" data-n="-0.01" ${dis}>◀◀ 1 cm</button><button class="btn secondary sm" data-n="-0.001" ${dis}>◀ 1 mm</button><button class="btn secondary sm" data-n="0.001" ${dis}>1 mm ▶</button><button class="btn secondary sm" data-n="0.01" ${dis}>1 cm ▶▶</button></div>`
+        :`<button class="btn secondary" id="tPlace" ${dis}>🎯 Put the target on the step</button>`}
+      ${tapeBtns}<button class="btn go" id="tDrop" ${placed&&!lv.done?'':'disabled'}>🔒 Lock target &amp; release</button>`;
+    $('#rL').onclick=()=>setRamp(S.lv.rampPos-0.01); $('#rR').onclick=()=>setRamp(S.lv.rampPos+0.01);
+    $('#hL').onclick=()=>setHang(S.lv.ex-0.01); $('#hR').onclick=()=>setHang(S.lv.ex+0.01);
+    if($('#tPlace')) $('#tPlace').onclick=()=>{ setTarget(1.0); renderToolbar(); };
+    $$('#toolbar [data-n]').forEach(b=>b.onclick=()=>setTarget(S.lv.targetX+ +b.dataset.n));
+    $('#tDrop').onclick=()=>{ if(guideBlocksDrop()) return; $('#dropModal').classList.add('show'); };
+  }
+  $('#tTape').onclick=()=>{ S.tape=!S.tape; renderToolbar(); renderSceneNote(); };
+  $('#tClear').onclick=()=>{ lv.meas=lv.meas.filter(m=>m.scene!==S.scene); renderReadings(); renderToolbar(); };
+}
+function renderSceneNote(){
+  $('#scTable').classList.toggle('sel',S.scene==='table'); $('#scStairs').classList.toggle('sel',S.scene==='stairs');
+  $('#sceneNote').textContent = S.tape ? 'Tape is on: drag from one dot to another.' : S.scene==='stairs' ? 'Side view: slide the ramp along the railing. Main view: drag the ramp to hang it out, drag the target.' : 'The ball leaves a mark where it lands.';
+}
+$('#scTable').onclick=()=>setScene('table'); $('#scStairs').onclick=()=>setScene('stairs');
+function setScene(sc){ if(S.ball) return; if(S.level===0&&sc==='stairs'&&S.lv.step<6){ flashGuide('Finish Part A at the lab table first. The guide will take you to the stairwell.'); return; }
+  S.scene=sc; S.tape=false; if(S.lv.done&&sc==='stairs'&&S.lv.result) showResult(); else hidePanel(); renderToolbar(); renderSceneNote(); }
+$('#dropCancel').onclick=()=>$('#dropModal').classList.remove('show');
+$('#dropGo').onclick=()=>{ $('#dropModal').classList.remove('show'); S.tape=false; S.lv.rampLocked=true; S.lv.hangLocked=true; renderToolbar(); release('stairs'); };
+
+/* ---------- Level 1: the guided steps ---------- */
+const HINT={ m:(v)=>v>3?'That looks like centimeters. Divide by 100 to get meters.':v<0?'Enter the size of the number, without a minus sign.':null };
+const STEPS=[
+ {scene:'table', title:'Part A: find the launch speed', btn:'Start',
+  body:()=>`<p>Your ramp launches the ball <b>horizontally</b> off the lab table. You don't know how fast it leaves the ramp yet.</p><p>You'll measure how far it <b>falls</b> and how far out it <b>lands</b>, then work backward to the launch speed, V<sub>x</sub>.</p>`},
+ {scene:'table', title:'Measure the drop height', key:'dyA', label:'Drop height', unit:'m',
+  body:()=>`<p>Turn on the <b>📏 Tape measure</b>. Drag from the dot at the <b>end of the ramp</b> straight down to the <b>plumb mark</b> on the floor.</p><p>The reading shows in your notebook in centimeters. Enter it in <b>meters</b>.</p>`,
+  test:(v,lv)=>near(v,y0t(lv),0.006), hint:(v)=>HINT.m(v)||'Measure from the end of the ramp straight down to the plumb mark on the floor.'},
+ {scene:'table', title:'Release the ball 3 times', btn:'Next', ready:lv=>lv.marks.length>=3, wait:lv=>`Marks so far: ${lv.marks.length} of 3.`,
+  body:()=>`<p>Press <b>▶ Release the ball</b> three times. Each landing leaves a mark on the carbon paper.</p><p>The marks won't be in exactly the same spot. That's normal, so you'll average them.</p>`},
+ {scene:'table', title:'Measure where it landed', key:'dxA', label:'Average landing distance, Δx', unit:'m',
+  body:()=>`<p>With the tape, measure from the <b>plumb mark</b> to <b>each landing mark</b>. Then find the <b>average</b> of your distances (the calculator is below).</p><p>Enter the average in <b>meters</b>.</p>`,
+  test:(v,lv)=>lv.marks.length>0&&near(v,mean(lv.marks.map(m=>m.x)),0.008), hint:(v)=>HINT.m(v)||'Measure plumb mark → each landing mark, add them up, and divide by how many there are.'},
+ {scene:'table', title:'Calculate the time in the air', key:'tA', label:'Time, t', unit:'s',
+  body:(lv)=>`<p>Use the <b>Y side</b>. The ball leaves the ramp horizontally, so V<sub>iy</sub> = 0 (the hidden 0).</p><div class="eqn">Δy = V<sub>iy</sub>·t + ½·a·t² &nbsp;→&nbsp; t = √(2·Δy ÷ a)<br>with Δy = −${f3(lv.vals.dyA)} m and a = −9.8 m/s²</div>`,
+  test:(v,lv)=>rel(v,Math.sqrt(2*lv.vals.dyA/G),0.015), hint:(v,lv)=>`Try sqrt(2*${f3(lv.vals.dyA)}/9.8) in the calculator.`},
+ {scene:'table', title:'Calculate the launch speed', key:'vx', label:'Launch speed, Vx', unit:'m/s',
+  body:(lv)=>`<p>Now the <b>X side</b>. Nothing speeds the ball up or slows it down sideways.</p><div class="eqn">Δx = V<sub>x</sub>·t &nbsp;→&nbsp; V<sub>x</sub> = Δx ÷ t<br>with Δx = ${f3(lv.vals.dxA)} m and t = ${f3(lv.vals.tA)} s</div>`,
+  test:(v,lv)=>rel(v,lv.vals.dxA/lv.vals.tA,0.015), hint:(v,lv)=>`V<sub>x</sub> = ${f3(lv.vals.dxA)} ÷ ${f3(lv.vals.tA)}.`},
+ {scene:'table', title:'Part B: the stairwell', btn:'Go to the stairwell →', onDone:()=>{ S.scene='stairs'; S.tape=false; },
+  body:(lv)=>`<p>You now know this ramp launches the ball at <b>V<sub>x</sub> = ${f3(lv.vals.vx)} m/s</b>. That stays the same anywhere you use it.</p><p>In the stairwell the ball falls a <b>different distance</b>, so it lands in a different place. Time to predict where.</p>`},
+ {scene:'stairs', title:'Line the ramp up over a step', btn:'This is my step', ready:lv=>Math.abs(stepOff(lv))<=CFG.ALIGN_OK, onDone:lv=>{ lv.rampLocked=true; },
+  wait:lv=>`Not lined up yet: ${(Math.abs(stepOff(lv))*100).toFixed(0)} cm ${stepOff(lv)<0?'left':'right'} of the center of step ${stepOf(lv)}.`,
+  body:()=>`<p>The ramp sits on the railing. In the <b>side view</b>, drag it along the railing (or use the <b>Ramp ◀ ▶</b> buttons) until it is right over the <b>middle of the step</b> you want.</p><p>The ball flies across that step, so it has to be lined up or it will clip the edge. Lower steps mean a bigger drop.</p>`},
+ {scene:'stairs', title:'Hang the ramp out over the step', btn:'The ramp is set', ready:lv=>plumbState(lv)==='step'&&lv.ex-CFG.SRAIL_X>=0.02&&lv.ex-CFG.SRAIL_X<=0.065, onDone:lv=>{ lv.hangLocked=true; },
+  wait:lv=>{ const ps=plumbState(lv); return ps==='gap'?'The plumb bob is hanging down the gap. The ramp needs to reach farther out.':ps==='rail'?'The plumb bob is sitting on the stair railing. Slide the ramp out a little more.':`The plumb bob is on the step, ${cm(lv.ex-CFG.SRAIL_X)} past the stair railing. Aim for 2.5 to 5 cm (1 to 2 in).`; },
+  body:()=>`<p>There is a <b>gap of about 15 cm (6 in)</b> between the landing railing and the steps, and then the <b>stair railing</b>. The ramp is clamped by the back of its base to the landing railing, so it can hang out over the step.</p><p>Drag the ramp in the main view (or use <b>Hang out ▶</b>) until the <b>plumb bob</b> lands on the step about <b>1 to 2 inches (2.5 to 5 cm) past the stair railing</b>. The ball starts falling from right above that spot.</p>`},
+ {scene:'stairs', title:'Measure the new drop height', key:'dyB', label:'Drop height', unit:'m',
+  body:()=>`<p>With the tape, measure from the <b>end of the ramp</b> straight down to the <b>plumb mark</b> on your step. Enter it in <b>meters</b>.</p>`,
+  test:(v,lv)=>near(v,y0s(lv),0.006), hint:(v)=>HINT.m(v)||'Measure from the end of the ramp straight down to the plumb mark on the step.'},
+ {scene:'stairs', title:'Calculate the new time in the air', key:'tB', label:'Time, t', unit:'s',
+  body:(lv)=>`<div class="eqn">t = √(2·Δy ÷ a) &nbsp; with Δy = −${f3(lv.vals.dyB)} m and a = −9.8 m/s²</div><p>A bigger drop means more time in the air.</p>`,
+  test:(v,lv)=>rel(v,Math.sqrt(2*lv.vals.dyB/G),0.015), hint:(v,lv)=>`Try sqrt(2*${f3(lv.vals.dyB)}/9.8) in the calculator.`},
+ {scene:'stairs', title:'Calculate where it will land', key:'dxB', label:'Landing distance, Δx', unit:'m',
+  body:(lv)=>`<div class="eqn">Δx = V<sub>x</sub>·t &nbsp; with V<sub>x</sub> = ${f3(lv.vals.vx)} m/s and t = ${f3(lv.vals.tB)} s</div>`,
+  test:(v,lv)=>rel(v,lv.vals.vx*lv.vals.tB,0.015), hint:(v,lv)=>HINT.m(v)||`Δx = ${f3(lv.vals.vx)} × ${f3(lv.vals.tB)}.`},
+ {scene:'stairs', title:'Place the target', btn:'Target is set', ready:lv=>lv.targetX!=null&&Math.abs(lv.targetX-lv.ex-lv.vals.dxB)<=0.007,
+  wait:lv=>lv.targetX==null?'Put the target on the step first.':`The bullseye is ${cm(lv.targetX-lv.ex)} from the plumb mark (and ${cm(lv.targetX)} from the edge of the step). You calculated ${cm(lv.vals.dxB)}.`,
+  body:(lv)=>`<p>Press <b>🎯 Put the target on the step</b>, then drag it or use the <b>Target ◀ ▶</b> buttons until the bullseye is <b>${cm(lv.vals.dxB)}</b> from the <b>plumb mark</b>.</p><p>Measure from the plumb mark, <b>not</b> from the edge of the step. The ball's sideways trip starts right under the end of the ramp. Check it with the tape (the close-up helps): drag from the <b>plumb mark</b> to the <b>bullseye</b>. The reading updates as you move the target.</p>`},
+ {scene:'stairs', title:'Release the ball!', final:true,
+  body:(lv)=>lv.done?`<p><b>Done!</b> Your result is on the target. From here you can go on to Level 2, where you'll do these same steps with less help.</p>`:`<p>Everything is set. Press <b>🔒 Lock target &amp; release</b>. You get one official drop.</p>`}
+];
+let guideFlash='';
+function flashGuide(t){ guideFlash=t; renderGuide(); }
+function guideBlocksDrop(){ if(S.level===0&&S.lv.step<STEPS.length-1){ flashGuide('Finish the earlier steps in the guide before the official drop.'); return true; } return false; }
+function miniTables(lv){
+  const v=lv.vals, s=(x,u,neg)=>x==null?'':`${neg?'−':''}${f3(x)} ${u}`;
+  const tbl=(title,dy,t,dx)=>`<div class="mt"><div class="mh">${title}</div>
+    <div class="mr"><div><span class="k">V<sub>x</sub></span> ${s(v.vx,'m/s')}</div><div><span class="k">V<sub>iy</sub></span> 0 m/s</div></div>
+    <div class="mr"><div><span class="k">Δx</span> ${s(dx,'m')}</div><div><span class="k">a</span> −9.8 m/s²</div></div>
+    <div class="mr"><div class="t"><span class="k">Δy</span> ${s(dy,'m',true)} &nbsp; <span class="k">t</span> ${s(t,'s')}</div></div></div>`;
+  return `<div class="mini">${tbl('🧪 Lab table',v.dyA,v.tA,v.dxA)}${tbl('🪜 Stairwell',v.dyB,v.tB,v.dxB)}</div>`;
+}
+function renderGuide(){
+  const lv=S.lv, c=$('#guideCard'); if(!lv) return;
+  if(S.level===0){
+    const i=lv.step, st=STEPS[i], done=STEPS.slice(0,i).filter(s=>s.key).map(s=>`<li><b>✓</b> ${s.label}: ${f3(lv.vals[s.key])} ${s.unit}</li>`).join('');
+    const isReady=!st.ready||st.ready(lv);
+    c.innerHTML=`<h2>Level 1 guide</h2><ul class="donelist">${done}</ul>
+      <div class="stepbox"><div class="sn">Step ${i+1} of ${STEPS.length}</div><h3>${st.title}</h3>${st.body(lv)}
+      ${st.key?`<div class="inrow"><label for="gIn">${st.label} =</label><input class="num" id="gIn" inputmode="decimal" autocomplete="off"><span class="unit">${st.unit}</span><button class="btn" id="gCheck">Check</button></div>`:''}
+      ${st.btn?`<div class="inrow"><button class="btn" id="gNext" ${isReady?'':'disabled'}>${st.btn}</button></div>`:''}
+      <div class="msg ${lv.msg&&lv.msg.ok?'good':'bad'}" id="gMsg">${guideFlash||(lv.msg?lv.msg.t:'')||(st.wait&&!isReady?st.wait(lv):'')}</div></div>
+      ${miniTables(lv)}`;
+    guideFlash='';
+    if($('#gCheck')){ const go=()=>{ const v=num($('#gIn').value);
+        if(isNaN(v)){ lv.msg={ok:false,t:'Type a number.'}; renderGuide(); return; }
+        if(st.test(v,lv)){ lv.vals[st.key]=v; lv.msg={ok:true,t:''}; advance(); }
+        else { lv.msg={ok:false,t:'Not quite. '+st.hint(v,lv)}; renderGuide(); const el=$('#gIn'); if(el){ el.value=String(v); } } };
+      $('#gCheck').onclick=go; $('#gIn').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); }); }
+    if($('#gNext')) $('#gNext').onclick=()=>{ if(st.ready&&!st.ready(lv)) return; advance(); };
+  } else if(S.level===1){
+    const item=(k,t)=>`<li><label><input type="checkbox" data-k="${k}" ${lv.chk[k]?'checked':''}><span>${t}</span></label></li>`;
+    const inp=k=>`<input data-t="${k}" inputmode="decimal" autocomplete="off" value="${lv.tbl[k]||''}">`;
+    const tbl=(title,p)=>`<div class="mt"><div class="mh">${title}</div>
+      <div class="mr"><div><span class="k">V<sub>x</sub></span> ${inp(p+'vx')}</div><div><span class="k">V<sub>iy</sub></span> ${inp(p+'viy')}</div></div>
+      <div class="mr"><div><span class="k">Δx</span> ${inp(p+'dx')}</div><div><span class="k">a</span> ${inp(p+'a')}</div></div>
+      <div class="mr"><div><span class="k">Δy</span> ${inp(p+'dy')}</div><div><span class="k">t</span> ${inp(p+'t')}</div></div></div>`;
+    c.innerHTML=`<h2>Level 2 checklist</h2><p style="margin:0 0 6px;font-size:13.5px;line-height:1.45">New ramp, so a <b>new launch speed</b>. The steps are the same as before, but nothing is checked this time. Tick things off as you go.</p>
+      <ul class="chk"><li class="hd">Part A · lab table</li>${item('a1','Measure the drop height')}${item('a2','Release the ball several times')}${item('a3','Measure the landing distances and average them')}${item('a4','Calculate the time in the air, then V<sub>x</sub>')}
+      <li class="hd">Part B · stairwell</li>${item('b1','Line the ramp up over a step')}${item('b1h','Hang the ramp out over the step and drop the plumb bob')}${item('b2','Measure the new drop height')}${item('b3','Calculate the time, then Δx')}${item('b4','Place the target with the tape')}${item('b5','Lock the target and release')}</ul>
+      <div class="mini">${tbl('🧪 Lab table','A')}${tbl('🪜 Stairwell','B')}</div>
+      <details><summary>Need the equations?</summary>X side: Δx = V<sub>x</sub>·t<br>Y side: V<sub>fy</sub> = V<sub>iy</sub> + a·t &nbsp;·&nbsp; Δy = V<sub>iy</sub>·t + ½·a·t² &nbsp;·&nbsp; V<sub>fy</sub>² = V<sub>iy</sub>² + 2·a·Δy</details>`;
+    $$('#guideCard [data-k]').forEach(b=>b.onchange=()=>{ lv.chk[b.dataset.k]=b.checked; });
+    $$('#guideCard [data-t]').forEach(b=>b.oninput=()=>{ lv.tbl[b.dataset.t]=b.value; });
+  } else {
+    c.innerHTML=`<h2>Level 3 · on your own</h2><p style="margin:0;font-size:14px;line-height:1.5">A new ramp, and no instructions this time. You have the ramp, the ball, carbon paper, the tape measure, a target, and both locations.</p>
+      <p style="margin:8px 0 0;font-size:14px;line-height:1.5">Plan it, measure it, calculate it, and hit the bullseye. You get <b>one official drop</b> in the stairwell.</p>`;
+  }
+}
+function advance(){ const lv=S.lv, st=STEPS[lv.step]; if(st.onDone) st.onDone(lv); lv.step=Math.min(lv.step+1,STEPS.length-1); lv.msg=null; renderAll(); }
+
+/* ---------- tabs, header, notebook ---------- */
+function renderTabs(){
+  $('#tabs').innerHTML='';
+  LEVELS.forEach((L,i)=>{ const lock=!unlocked(i), b=S.prog.best[i];
+    const el=document.createElement('button'); el.className='tab'+(i===S.level?' sel':'')+(lock?' locked':'');
+    el.innerHTML=`<span class="badge">${lock?'🔒':b!=null?(passed(i)?'✅ ':'')+b+' pts':''}</span><div class="n">Level ${i+1}</div><div class="nm">${L.name}</div><div class="eq">${L.sub}</div>`;
+    el.onclick=()=>{ if(lock||S.ball||i===S.level) return; startLevel(i); };
+    $('#tabs').appendChild(el); });
+  $('#medals').innerHTML=S.prog.best.map((b,i)=>`<div class="medal${passed(i)?' won':''}">${b==null?i+1:b}</div>`).join('');
+}
+function renderAll(){ renderTabs(); renderSceneNote(); renderToolbar(); renderGuide(); renderReadings(); const n=$('#notes'); if(n.value!==S.lv.notes) n.value=S.lv.notes; }
+$('#notes').addEventListener('input',e=>{ S.lv.notes=e.target.value; });
+function calc(){ const raw=$('#calcIn').value, out=$('#calcOut'); if(!raw.trim()){ out.textContent='='; return; }
+  let s=raw.toLowerCase().replace(/[−–]/g,'-').replace(/×/g,'*').replace(/÷/g,'/').replace(/√/g,'sqrt').replace(/\^/g,'**');
+  if(!/^[0-9+\-*/().\s]*$/.test(s.replace(/sqrt/g,''))){ out.textContent='= ?'; return; }
+  try{ const v=Function('"use strict";const sqrt=Math.sqrt;return ('+s+')')(); out.textContent=(typeof v==='number'&&isFinite(v))?'= '+(Math.round(v*10000)/10000):'= ?'; }catch(e){ out.textContent='= ?'; } }
+$('#calcIn').addEventListener('input',calc);
+
+/* ---------- teacher unlock ---------- */
+function closeTeacher(){ $('#teacherModal').classList.remove('show'); }
+$('#teacherBtn').onclick=()=>{ if(S.teacher) return; $('#teacherField').value=''; $('#teacherErr').textContent=''; $('#teacherModal').classList.add('show'); setTimeout(()=>$('#teacherField').focus(),50); };
+$('#teacherGo').onclick=()=>{ if($('#teacherField').value.trim()===TEACHER_CODE){ S.teacher=true; closeTeacher(); $('#teacherBtn').textContent='🔓'; renderTabs(); } else { $('#teacherErr').textContent='That passcode is not right.'; $('#teacherField').select(); } };
+$('#teacherField').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#teacherGo').click(); if(e.key==='Escape') closeTeacher(); });
+$('#teacherCancel').onclick=closeTeacher;
+$('#teacherModal').onclick=e=>{ if(e.target.id==='teacherModal') closeTeacher(); };
+
+/* ---------- completion code ---------- */
+function letter(c){ c=(c||'').toUpperCase(); return /[A-Z]/.test(c)?c:'X'; }
+function initials(name){ const p=name.trim().split(/\s+/).filter(Boolean);
+  const a=letter((p[0]||'')[0]); const b=letter(p.length>1?(p[p.length-1]||'')[0]:((p[0]||'')[1]||(p[0]||'')[0])); return [a,b]; }
+function makeCode(name){ const [i1,i2]=initials(name);
+  const cs='ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const r=()=>cs[Math.floor(Math.random()*cs.length)];
+  return [r(),r(),i1,r(),r(),i2,r(),r()].join(''); }
+const FORM=(()=>{ if(!FORM_PREFILL_LINK) return null;
+  try{ const u=new URL(FORM_PREFILL_LINK), map={}; u.searchParams.forEach((v,k)=>{ if(/^entry\.\d+$/.test(k)) map[v.trim().toUpperCase()]=k; }); return {base:u.origin+u.pathname,map}; }catch(e){ return null; } })();
+let lastName='', lastCode='';
+const total=()=>S.prog.best.reduce((p,c)=>p+(c||0),0);
+function showWin(){ $('#nameField').value=''; $('#nameErr').textContent=''; $('#nameModal').classList.add('show'); setTimeout(()=>$('#nameField').focus(),50); }
+$('#codeBtn').onclick=()=>{ const name=$('#nameField').value.trim();
+  if(name.replace(/[^A-Za-z]/g,'').length<2){ $('#nameErr').textContent='Please enter your first and last name.'; return; }
+  lastName=name; lastCode=makeCode(name)+'-'+total(); $('#winName').textContent=name.split(/\s+/)[0];
+  $('#winScores').textContent=S.prog.best.map((b,i)=>`L${i+1}: ${b}`).join(' · ')+` (total ${total()})`;
+  $('#codeOut').textContent=lastCode; $('#nameModal').classList.remove('show'); $('#winModal').classList.add('show');
+  if(FORM){ $('#turninBtn').style.display='block'; $('#turninNote').innerHTML='Tapping <b>Turn it in</b> opens your class form with your name, code and scores already filled in. Just press <b>Submit</b>. (No form opens? Screenshot this page instead.) Your initials are in the <b>3rd</b> and <b>6th</b> spots.'; } };
+$('#nameField').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#codeBtn').click(); });
+function turnInURL(){ const q=new URLSearchParams({usp:'pp_url'}), put=(k,v)=>{ if(FORM.map[k]) q.append(FORM.map[k],String(v)); };
+  put('NAME',lastName); put('CODE',lastCode); S.prog.best.forEach((b,i)=>put('L'+(i+1),b==null?'':b)); put('TOTAL',total()); return FORM.base+'?'+q.toString(); }
+$('#turninBtn').onclick=()=>{ if(lastCode&&FORM) window.open(turnInURL(),'_blank','noopener'); };
+$('#copyBtn').onclick=()=>{ const done=()=>{ $('#copyBtn').textContent='Copied ✓'; setTimeout(()=>$('#copyBtn').textContent='Copy code',1400); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(lastCode).then(done,done); else done(); };
+$('#moreBtn').onclick=()=>$('#winModal').classList.remove('show');
+
+/* ---------- start ---------- */
+$('#helpBtn').onclick=()=>$('#intro').classList.add('show');
+$('#introGo').onclick=()=>$('#intro').classList.remove('show');
+$('#intro').onclick=e=>{ if(e.target.id==='intro') $('#intro').classList.remove('show'); };
+startLevel(passed(1)?2:passed(0)?1:0);
+requestAnimationFrame(frame);
+$('#intro').classList.add('show');
+window.__lab={S,CFG,STEPS,y0t,y0s,stepOf,stepOff,release,updateBall,startLevel,setRamp,setTarget,finishDrop,anchors,measList,advance,calc,makeCode,turnInURL:()=>FORM?turnInURL():null,renderAll};
+</script>
+</body>
+</html>
